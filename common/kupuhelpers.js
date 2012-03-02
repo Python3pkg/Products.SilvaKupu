@@ -15,8 +15,8 @@
 Some notes about the scripts:
 
 - Problem with bound event handlers:
-    
-    When a method on an object is used as an event handler, the method uses 
+
+    When a method on an object is used as an event handler, the method uses
     its reference to the object it is defined on. The 'this' keyword no longer
     points to the class, but instead refers to the element on which the event
     is bound. To overcome this problem, you can wrap the method in a class that
@@ -47,16 +47,16 @@ Some notes about the scripts:
 
 - Problem with window.setTimeout:
 
-    The window.setTimeout function has a couple of problems in usage, all 
+    The window.setTimeout function has a couple of problems in usage, all
     caused by the fact that it expects a *string* argument that will be
     evalled in the global namespace rather than a function reference with
     plain variables as arguments. This makes that the methods on 'this' can
     not be called (the 'this' variable doesn't exist in the global namespace)
     and references to variables in the argument list aren't allowed (since
-    they don't exist in the global namespace). To overcome these problems, 
-    there's now a singleton instance of a class called Timer, which has one 
+    they don't exist in the global namespace). To overcome these problems,
+    there's now a singleton instance of a class called Timer, which has one
     public method called registerFunction. This can be called with a function
-    reference and a variable number of extra arguments to pass on to the 
+    reference and a variable number of extra arguments to pass on to the
     function.
 
     Usage:
@@ -73,7 +73,7 @@ Some notes about the scripts:
 //----------------------------------------------------------------------------
 function newDocumentElement(doc, tagName, args) {
     /* Create a new element, set attributes, and append children */
-    if (_SARISSA_IS_IE) {
+    if (_SARISSA_IS_IE && _SARISSA_IS_IE < 9) {
         /* Braindead IE cannot set some attributes (e.g. NAME) except
          * through bizarre use of createElement */
         var attrs = [tagName];
@@ -95,7 +95,7 @@ function newDocumentElement(doc, tagName, args) {
     for (var a = 1; a < args.length; a++) {
         var arg = args[a];
         if (arg.length===undefined) {
-            if (!_SARISSA_IS_IE) {
+            if (!_SARISSA_IS_IE || _SARISSA_IS_IE >= 9) {
                 for (var attr in arg) {
                     node[attr] = arg[attr];
                 };
@@ -122,10 +122,10 @@ function addEventHandler(element, event, method, context) {
     };
     wrappedmethod.args = args;
     try {
-        if (element.addEventListener) {
-            element.addEventListener(event, wrappedmethod.execute, false);
-        } else if (element.attachEvent) {
+        if (element.attachEvent) {
             element.attachEvent("on" + event, wrappedmethod.execute);
+        } else if (element.addEventListener) {
+            element.addEventListener(event, wrappedmethod.execute, false);
         } else {
             throw _("Unsupported browser!");
         };
@@ -183,7 +183,7 @@ function openPopup(url, width, height) {
     var sh = screen.height;
     var left = sw / 2 - width / 2;
     var top = sh / 2 - height / 2;
-    var win = window.open(url, 'someWindow', 
+    var win = window.open(url, 'someWindow',
                 'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top);
     return win;
 };
@@ -244,7 +244,7 @@ function _load_dict_helper(element) {
                     value += child.childNodes[j].nodeValue;
                 };
             };
-            if (typeof(value) == typeof('') && !isNaN(parseInt(value)) && 
+            if (typeof(value) == typeof('') && !isNaN(parseInt(value)) &&
                     parseInt(value).toString().length == value.length) {
                 value = parseInt(value);
             } else if (typeof(value) != typeof('')) {
@@ -279,6 +279,11 @@ function loadDictFromXML(document, islandid) {
     */
     var dict = {};
     var confnode = getFromSelector(islandid);
+    if (confnode.canHaveChildren == false) {
+        var xmlstring= confnode.innerHTML;
+        var parser = new DOMParser();
+        confnode = parser.parseFromString(xmlstring,"text/xml");
+    };
     var root = null;
     for (var i=0; i < confnode.childNodes.length; i++) {
         if (confnode.childNodes[i].nodeType == 1) {
@@ -298,8 +303,8 @@ function NodeIterator(node, continueatnextsibling) {
 
         can be used to recursively walk through all children of a node,
         the next() method will return the next node until either the next
-        sibling of the startnode is reached (when continueatnextsibling is 
-        false, the default) or when there's no node left (when 
+        sibling of the startnode is reached (when continueatnextsibling is
+        false, the default) or when there's no node left (when
         continueatnextsibling is true)
 
         returns false if no nodes are left
@@ -307,7 +312,7 @@ function NodeIterator(node, continueatnextsibling) {
     this.node = node;
     this.current = node;
     this.terminator = continueatnextsibling ? null : node;
-    
+
     this.next = function() {
         /* return the next node */
         if (this.current === false) {
@@ -338,7 +343,7 @@ function NodeIterator(node, continueatnextsibling) {
 
     this.setCurrent = function(node) {
         /* change the current node
-            
+
             can be really useful for specific hacks, the user must take
             care that the node is inside the iterator's scope or it will
             go wild
@@ -352,8 +357,8 @@ function NodeIterator(node, continueatnextsibling) {
 */
 function BaseSelection() {
     /* superclass for the Selection objects
-    
-        this will contain higher level methods that don't contain 
+
+        this will contain higher level methods that don't contain
         browser-specific code
     */
     this.splitNodeAtSelection = function(node) {
@@ -373,14 +378,14 @@ function BaseSelection() {
         // the original and the cloned node, in the original we'll remove
         // the br node and everything that's behind it, on the cloned one
         // we'll remove the br and everything before it
-        // anyway, we'll end up with 2 nodes, the first already in the 
+        // anyway, we'll end up with 2 nodes, the first already in the
         // document (the original node) and the second we can just attach
         // to the doc after the first one
         var doc = this.document.getDocument();
         var br = doc.createElement('br');
         br.setAttribute('node_splitter', 'indeed');
         this.replaceWithNode(br);
-        
+
         var clone = node.cloneNode(true);
 
         // now walk through the original node
@@ -452,7 +457,7 @@ function BaseSelection() {
 function MozillaSelection(document) {
     this.document = document;
     this.selection = document.getWindow().getSelection();
-    
+
     this.selectNodeContents = function(node) {
         if (node && node.parentNode) {
             /* select the contents of a node */
@@ -474,7 +479,7 @@ function MozillaSelection(document) {
     this.replaceWithNode = function(node, selectAfterPlace) {
         // XXX this should be on a range object
         /* replaces the current selection with a new node
-            returns a reference to the inserted node 
+            returns a reference to the inserted node
 
             newnode is the node to replace the content with, selectAfterPlace
             can either be a DOM node that should be selected after the new
@@ -546,7 +551,7 @@ function MozillaSelection(document) {
         }
 
         if (selectAfterPlace) {
-            // a bit implicit here, but I needed this to be backward 
+            // a bit implicit here, but I needed this to be backward
             // compatible and also I didn't want yet another argument,
             // JavaScript isn't as nice as Python in that respect (kwargs)
             // if selectAfterPlace is a DOM node, select all of that node's
@@ -679,7 +684,7 @@ function MozillaSelection(document) {
     this.cutChunk = function(startOffset, endOffset) {
         // XXX this should be on a range object
         var range = this.selection.getRangeAt(0);
-        
+
         // set start point
         var offsetParent = this.parentElement();
         var currnode = offsetParent.firstChild;
@@ -687,7 +692,7 @@ function MozillaSelection(document) {
 
         var startparent = null;
         var startparentoffset = 0;
-        
+
         while (currnode) {
             if (currnode.nodeType == 3) { // XXX need to add CDATA support
                 var nodelength = currnode.nodeValue.length;
@@ -707,7 +712,7 @@ function MozillaSelection(document) {
 
         var endparent = null;
         var endoffset = 0;
-        
+
         while (currnode) {
             if (currnode.nodeType == 3) { // XXX need to add CDATA support
                 var nodelength = currnode.nodeValue.length;
@@ -721,7 +726,7 @@ function MozillaSelection(document) {
             };
             currnode = currnode.nextSibling;
         };
-        
+
         // now cut the chunk
         if (!startparent) {
             throw(_('Start offset out of range!'));
@@ -829,7 +834,7 @@ function MozillaSelection(document) {
                 };
                 currnode = currnode.nextSibling;
             };
-            // if we still haven't found the startparent we should walk to 
+            // if we still haven't found the startparent we should walk to
             // all nodes following offsetparent as well
             var currnode = offsetparent.nextSibling;
             while (currnode) {
@@ -949,7 +954,7 @@ function IESelection(document) {
 
     this.replaceWithNode = function(newnode, selectAfterPlace) {
         /* replaces the current selection with a new node
-            returns a reference to the inserted node 
+            returns a reference to the inserted node
 
             newnode is the node to replace the content with, selectAfterPlace
             can either be a DOM node that should be selected after the new
@@ -1110,7 +1115,7 @@ function IESelection(document) {
 
     this.containsNode = function(node) {
         var selected = this.selection.createRange();
-        
+
         if (this.selection.type.toLowerCase()=='text') {
             var range = doc.body.createTextRange();
             range.moveToElementText(node);
@@ -1129,7 +1134,7 @@ function IESelection(document) {
             return false;
         }
     };
-    
+
     this.getRange = function() {
         return this.selection.createRange();
     }
@@ -1155,12 +1160,12 @@ IESelection.prototype = new BaseSelection;
     is changed, so 'this' inside the method doesn't refer to the object
     on which the method is defined (or to which it is attached), but for
     instance to the element on which the method was bound to as an event
-    handler. This class can be used to wrap such a method, the wrapper 
+    handler. This class can be used to wrap such a method, the wrapper
     has one method that can be used as the event handler instead. The
     constructor expects at least 2 arguments, first is a reference to the
     method, second the context (a reference to the object) and optionally
     it can cope with extra arguments, they will be passed to the method
-    as arguments when it is called (which is a nice bonus of using 
+    as arguments when it is called (which is a nice bonus of using
     this wrapper).
 */
 
@@ -1170,7 +1175,7 @@ function ContextFixer(func, context) {
     this.context = context;
     this.args = arguments;
     var self = this;
-    
+
     this.execute = function() {
         /* execute the method */
         var args = new Array();
@@ -1193,7 +1198,7 @@ function ContextFixer(func, context) {
     object is 'timer_instance', which has one public method called
     registerFunction. This method takes at least 2 arguments: a
     reference to the function (or method) to be called and the timeout.
-    Arguments to the function are optional arguments to the 
+    Arguments to the function are optional arguments to the
     registerFunction method. Example:
 
     timer_instance.registerMethod(foo, 100, 'bar', 'baz');
@@ -1215,14 +1220,14 @@ function Timer() {
     /* class that has a method to replace window.setTimeout */
     this.lastid = 0;
     this.functions = {};
-    
+
     this.registerFunction = function(object, func, timeout) {
         /* register a function to be called with a timeout
 
-            args: 
+            args:
                 func - the function
                 timeout - timeout in millisecs
-                
+
             all other args will be passed 1:1 to the function when called
         */
         var args = new Array();
@@ -1311,7 +1316,7 @@ String.prototype.strip = function() {
 };
 
 String.prototype.reduceWhitespace = function() {
-    /* returns a string in which all whitespace is reduced 
+    /* returns a string in which all whitespace is reduced
     to a single, plain space */
     return this.replace(/\s+/g, ' ');
 };
