@@ -458,6 +458,13 @@ function MozillaSelection(document) {
     this.document = document;
     this.selection = document.getWindow().getSelection();
 
+    this.selectNode = function(node) {
+        var range = this.selection.getRangeAt(0).cloneRange();
+        this.selection.removeAllRanges();
+        range.selectNode(node);
+        this.selection.addRange(range);
+    };
+
     this.selectNodeContents = function(node) {
         if (node && node.parentNode) {
             /* select the contents of a node */
@@ -928,6 +935,10 @@ function IESelection(document) {
             range.collapse();
             range.select();
     }
+
+    this.selectNode = function(node) {
+        // Not implemented
+    };
 
     this.selectNodeContents = function(node) {
         /* select the contents of a node */

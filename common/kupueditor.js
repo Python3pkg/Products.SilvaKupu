@@ -15,15 +15,15 @@
 //----------------------------------------------------------------------------
 
 /* KupuDocument
-    
+
     This essentially wraps the iframe.
     XXX Is this overkill?
-    
+
 */
 
 function KupuDocument(iframe) {
     /* Model */
-    
+
     // attrs
     this.editable = iframe; // the iframe
     this.window = this.editable.contentWindow;
@@ -44,10 +44,10 @@ function KupuDocument(iframe) {
             };
         };
     };
-    
+
     this.reloadSource = function() {
         /* reload the source */
-        
+
         // XXX To temporarily work around problems with resetting the
         // state after a reload, currently the whole page is reloaded.
         // XXX Nasty workaround!! to solve refresh problems...
@@ -80,27 +80,27 @@ function KupuDocument(iframe) {
 /* KupuEditor
 
     This controls the document, should be used from the UI.
-    
+
 */
 
 function KupuEditor(document, config, logger) {
     /* Controller */
-    
+
     // attrs
     this.document = document; // the model
     this.config = config; // an object that holds the config values
     this.log = logger; // simple logger object
     this.tools = {}; // mapping id->tool
     this.filters = new Array(); // contentfilters
-    
+
     this._designModeSetAttempts = 0;
     this._initialized = false;
 
-    // some properties to save the selection, required for IE to remember 
+    // some properties to save the selection, required for IE to remember
     // where in the iframe the selection was
     this._previous_range = null;
 
-    // this property is true if the content is changed, false if no changes 
+    // this property is true if the content is changed, false if no changes
     // are made yet
     this.content_changed = false;
 
@@ -155,7 +155,7 @@ function KupuEditor(document, config, logger) {
     };
 
     this.updateStateHandler = function(event) {
-        /* check whether the event is interesting enough to trigger the 
+        /* check whether the event is interesting enough to trigger the
         updateState machinery and act accordingly */
         var interesting_codes = new Array(8, 13, 37, 38, 39, 40, 46);
         // unfortunately it's not possible to do this on blur, since that's
@@ -164,7 +164,7 @@ function KupuEditor(document, config, logger) {
         this._saveSelection();
 
         if (event.type == 'click' || event.type=='mouseup' ||
-                (event.type == 'keyup' && 
+                (event.type == 'keyup' &&
                     interesting_codes.contains(event.keyCode))) {
             // Filthy trick to make the updateState method get called *after*
             // the event has been resolved. This way the updateState methods can
@@ -173,39 +173,39 @@ function KupuEditor(document, config, logger) {
             this.updateState(event);
         }
     };
-    
+
     this.updateState = function(event) {
         /* let each tool change state if required */
         // first see if the event is interesting enough to trigger
         // the whole updateState machinery
         var selNode = this.getSelectedNode();
         for (var id in this.tools) {
-            try {
+            //try {
                 this.tools[id].updateState(selNode, event);
-            } catch (e) {
-                if (e == UpdateStateCancelBubble) {
-                    this.updateState(event);
-                    break;
-                } else {
-                    this.logMessage(
-                        _('Exception while processing updateState on ' +
-                            '${id}: ${msg}', {'id': id, 'msg': e}), 2);
-                };
-            };
+            // } catch (e) {
+            //     if (e == UpdateStateCancelBubble) {
+            //         this.updateState(event);
+            //         break;
+            //     } else {
+            //         this.logMessage(
+            //             _('Exception while processing updateState on ' +
+            //                 '${id}: ${msg}', {'id': id, 'msg': e}), 2);
+            //     };
+            // };
         };
     };
-    
+
     this.saveDocument = function(redirect, synchronous) {
         /* save the document
 
-            the (optional) redirect argument can be used to make the client 
+            the (optional) redirect argument can be used to make the client
             jump to another URL when the save action was successful.
 
             synchronous is a boolean to allow sync saving (usually better to
             not save synchronous, since it may make browsers freeze on errors,
             this is used for saveOnPart, though)
         */
-        
+
         // if no dst is available, bail out
         if (!this.config.dst) {
             this.logMessage(_('No destination URL available!'), 2);
@@ -219,7 +219,7 @@ function KupuEditor(document, config, logger) {
             return;
         }
         this._initialized = false;
-        
+
         // set the window status so people can see we're actually saving
         window.status= _("Please wait while saving document...");
 
@@ -236,19 +236,19 @@ function KupuEditor(document, config, logger) {
                 };
             };
         };
-        
+
         // pass the content through the filters
         this.logMessage(_("Starting HTML cleanup"));
         var transform = this._filterContent(this.getInnerDocument().documentElement);
 
         // serialize to a string
         var contents = this._serializeOutputToString(transform);
-        
+
         this.logMessage(_("Cleanup done, sending document to server"));
         var request = new XMLHttpRequest();
-    
+
         if (!synchronous) {
-            request.onreadystatechange = (new ContextFixer(this._saveCallback, 
+            request.onreadystatechange = (new ContextFixer(this._saveCallback,
                                                this, request, redirect)).execute;
             request.open("PUT", this.config.dst, true);
             request.setRequestHeader("Content-type", this.config.content_type);
@@ -262,7 +262,7 @@ function KupuEditor(document, config, logger) {
             this.handleSaveResponse(request,redirect)
         };
     };
-    
+
     this.prepareForm = function(form, id) {
         /* add a field to the form and place the contents in it
 
@@ -277,7 +277,7 @@ function KupuEditor(document, config, logger) {
             return;
         }
         this._initialized = false;
-        
+
         // set the window status so people can see we're actually saving
         window.status= _("Please wait while saving document...");
 
@@ -294,24 +294,24 @@ function KupuEditor(document, config, logger) {
                 };
             };
         };
-        
+
         // set a default id
         if (!id) {
             id = 'kupu';
         };
-        
+
         // pass the content through the filters
         this.logMessage(_("Starting HTML cleanup"));
         var transform = this._filterContent(this.getInnerDocument().documentElement);
-        
-        // XXX need to fix this.  Sometimes a spurious "\n\n" text 
-        // node appears in the transform, which breaks the Moz 
+
+        // XXX need to fix this.  Sometimes a spurious "\n\n" text
+        // node appears in the transform, which breaks the Moz
         // serializer on .xml
         var contents =  this._serializeOutputToString(transform);
-        
+
         this.logMessage(_("Cleanup done, sending document to server"));
-        
-        // now create the form input, since IE 5.5 doesn't support the 
+
+        // now create the form input, since IE 5.5 doesn't support the
         // ownerDocument property we use window.document as a fallback (which
         // will almost by definition be correct).
         var document = form.ownerDocument ? form.ownerDocument : window.document;
@@ -320,7 +320,7 @@ function KupuEditor(document, config, logger) {
         var text = document.createTextNode(contents);
         ta.appendChild(text);
         ta.setAttribute('name', id);
-        
+
         // and add it to the form
         form.appendChild(ta);
 
@@ -329,7 +329,7 @@ function KupuEditor(document, config, logger) {
     };
 
     this.execCommand = function(command, param) {
-        /* general stuff like making current selection bold, italics etc. 
+        /* general stuff like making current selection bold, italics etc.
             and adding basic elements such as lists
             */
         if (!this._initialized) {
@@ -374,7 +374,7 @@ function KupuEditor(document, config, logger) {
         while (node) {
             if (node.nodeName.toLowerCase() == type) {
                 return node
-            }   
+            }
             var node = node.parentNode;
         }
         return false;
@@ -417,7 +417,7 @@ function KupuEditor(document, config, logger) {
         if (browser != "IE") {
             this.focusDocument();
         };
-        
+
         var ret = this.getSelection().replaceWithNode(insertNode, selectNode);
         this._saveSelection();
 
@@ -434,12 +434,12 @@ function KupuEditor(document, config, logger) {
     };
 
     this.registerContentChanger = function(element) {
-        /* set this.content_changed to true (marking the content changed) when the 
+        /* set this.content_changed to true (marking the content changed) when the
             element's onchange is called
         */
         addEventHandler(element, 'change', function() {this.content_changed = true;}, this);
     };
-    
+
     // helper methods
     this.getBrowserName = function() {
         /* returns either 'Mozilla' (for Mozilla, Firebird, Netscape etc.) or 'IE' */
@@ -451,14 +451,14 @@ function KupuEditor(document, config, logger) {
             throw _("Browser not supported!");
         }
     };
-    
+
     this.handleSaveResponse = function(request, redirect) {
         // mind the 1223 status, somehow IE gives that sometimes (on 204?)
         // at first we didn't want to add it here, since it's a specific IE
         // bug, but too many users had trouble with it...
         if (request.status != '200' && request.status != '204' &&
                 request.status != '1223') {
-            var msg = _('Error saving your data.\nResponse status: ' + 
+            var msg = _('Error saving your data.\nResponse status: ' +
                             '${status}.\nCheck your server log for more ' +
                             'information.', {'status': request.status});
             alert(msg);
@@ -487,7 +487,7 @@ function KupuEditor(document, config, logger) {
             this.handleSaveResponse(request, redirect)
         };
     };
-    
+
     this.reloadSrc = function() {
         /* reload the src, called after a save when reload_src is set to true */
         // XXX Broken!!!
@@ -533,7 +533,7 @@ function KupuEditor(document, config, logger) {
             this._setDesignMode();
             success = true;
         } catch (e) {
-            // register a function to the timer_instance because 
+            // register a function to the timer_instance because
             // window.setTimeout can't refer to 'this'...
             timer_instance.registerFunction(this, this._setDesignModeWhenReady, 100);
         };
@@ -554,8 +554,8 @@ function KupuEditor(document, config, logger) {
     };
 
     this._saveSelection = function() {
-        /* Save the selection, works around a problem with IE where the 
-         selection in the iframe gets lost. We only save if the current 
+        /* Save the selection, works around a problem with IE where the
+         selection in the iframe gets lost. We only save if the current
          selection in the document */
         if (this._isDocumentSelected()) {
             var currange = this.getInnerDocument().selection.createRange();
@@ -575,7 +575,7 @@ function KupuEditor(document, config, logger) {
             };
         };
     };
-    
+
     if (this.getBrowserName() != "IE") {
         this._saveSelection = function() {};
         this._restoreSelection = function() {};
@@ -593,7 +593,7 @@ function KupuEditor(document, config, logger) {
         while (someelement.nodeName.toLowerCase() != 'body') {
             someelement = someelement.parentNode;
         };
-        
+
         return someelement == editable_body;
     };
 
@@ -602,7 +602,7 @@ function KupuEditor(document, config, logger) {
         this._previous_range = null;
     };
 
-    this._filterContent = function(documentElement) {            
+    this._filterContent = function(documentElement) {
         /* pass the content through all the filters */
         // first copy all nodes to a Sarissa document so it's usable
         var xhtmldoc = Sarissa.getDomDocument();
@@ -677,9 +677,9 @@ function KupuEditor(document, config, logger) {
             title.appendChild(titletext);
         };
         // create a closing element for all elements that require one in XHTML
-        var dualtons = new Array('a', 'abbr', 'acronym', 'address', 'applet', 
-                                    'b', 'bdo', 'big', 'blink', 'blockquote', 
-                                    'button', 'caption', 'center', 'cite', 
+        var dualtons = new Array('a', 'abbr', 'acronym', 'address', 'applet',
+                                    'b', 'bdo', 'big', 'blink', 'blockquote',
+                                    'button', 'caption', 'center', 'cite',
                                     'comment', 'del', 'dfn', 'dir', 'div',
                                     'dl', 'dt', 'em', 'embed', 'fieldset',
                                     'font', 'form', 'frameset', 'h1', 'h2',
@@ -689,7 +689,7 @@ function KupuEditor(document, config, logger) {
                                     'multicol', 'nobr', 'noembed', 'noframes',
                                     'noscript', 'object', 'ol', 'optgroup',
                                     'option', 'p', 'pre', 'q', 's', 'script',
-                                    'select', 'small', 'span', 'strike', 
+                                    'select', 'small', 'span', 'strike',
                                     'strong', 'style', 'sub', 'sup', 'table',
                                     'tbody', 'td', 'textarea', 'tfoot',
                                     'th', 'thead', 'title', 'tr', 'tt', 'u',
@@ -712,17 +712,17 @@ function KupuEditor(document, config, logger) {
     this.xhtmlvalid = new XhtmlValidation(this);
 
     this._convertToSarissaNode = function(ownerdoc, htmlnode) {
-        /* Given a string of non-well-formed HTML, return a string of 
+        /* Given a string of non-well-formed HTML, return a string of
            well-formed XHTML.
 
-           This function works by leveraging the already-excellent HTML 
-           parser inside the browser, which generally can turn a pile 
-           of crap into a DOM.  We iterate over the HTML DOM, appending 
+           This function works by leveraging the already-excellent HTML
+           parser inside the browser, which generally can turn a pile
+           of crap into a DOM.  We iterate over the HTML DOM, appending
            new nodes (elements and attributes) into a node.
 
-           The primary problems this tries to solve for crappy HTML: mixed 
-           element names, elements that open but don't close, 
-           and attributes that aren't in quotes.  This can also be adapted 
+           The primary problems this tries to solve for crappy HTML: mixed
+           element names, elements that open but don't close,
+           and attributes that aren't in quotes.  This can also be adapted
            to filter out tags that you don't want and clean up inline styles.
 
            Inspired by Guido, adapted by Paul from something in usenet.
@@ -735,19 +735,19 @@ function KupuEditor(document, config, logger) {
         return xml.replace(/<([^>]+)\/>/g, "<$1 />");
     }
     this._serializeOutputToString = function(transform) {
-        // XXX need to fix this.  Sometimes a spurious "\n\n" text 
-        // node appears in the transform, which breaks the Moz 
+        // XXX need to fix this.  Sometimes a spurious "\n\n" text
+        // node appears in the transform, which breaks the Moz
         // serializer on .xml
-            
+
         if (this.config.strict_output) {
-            var contents =  '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" ' + 
-                            '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n' + 
+            var contents =  '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" ' +
+                            '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n' +
                             '<html xmlns="http://www.w3.org/1999/xhtml">' +
                             Sarissa.serialize(transform.getElementsByTagName("head")[0]) +
                             Sarissa.serialize(transform.getElementsByTagName("body")[0]) +
                             '</html>';
         } else {
-            var contents = '<html>' + 
+            var contents = '<html>' +
                             Sarissa.serialize(transform.getElementsByTagName("head")[0]) +
                             Sarissa.serialize(transform.getElementsByTagName("body")[0]) +
                             '</html>';
@@ -758,7 +758,7 @@ function KupuEditor(document, config, logger) {
         if (this.config.compatible_singletons) {
             contents = this._fixupSingletons(contents);
         };
-        
+
         return contents;
     };
     this.escapeEntities = function(xml) {
@@ -782,7 +782,7 @@ function KupuEditor(document, config, logger) {
     this.setClass = function(name) {
         this.getFullEditor().className += ' '+name;
     }
-    
+
     this.clearClass = function(name) {
         var fulleditor = this.getFullEditor();
         fulleditor.className = fulleditor.className.replace(' '+name, '');
@@ -802,7 +802,7 @@ function KupuEditor(document, config, logger) {
         }
         this.suspended = true;
     }
-    
+
     this.resumeEditing = function() {
         if (!this.suspended) {
             return;
