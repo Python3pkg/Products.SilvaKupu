@@ -9,7 +9,7 @@ version = '1.4.3dev'
 
 setup(name='Products.SilvaKupu',
       version=version,
-      description="Kupu WYSIWYG text editor for Silva.",
+      description="Kupu WYSIWYG text editor for Silva 2",
       long_description=open(os.path.join("Products", "kupu", "doc", "README.txt")).read() + "\n" +
                        open(os.path.join("Products", "kupu", "doc", "CHANGES.txt")).read(),
       classifiers=[
@@ -20,7 +20,7 @@ setup(name='Products.SilvaKupu',
       keywords='kupu silva zope2',
       author='Infrae',
       author_email='info@infrae.com',
-      url='http://infrae.com/products/kupu_editor',
+      url='https://github.com/silvacms/Products.SilvaKupu',
       license='Kupu License',
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['Products'],

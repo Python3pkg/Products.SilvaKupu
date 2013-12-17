@@ -33,3 +33,8 @@ to be saved without reloading the page) as well as in a form.
 Kupu can be customized on many different levels, allowing a lot of changes
 from CSS, but also providing a JavaScript extension API.
 
+Code repository
+===============
+
+The code for this extension can be found in Git:
+https://github.com/silvacms/Products.SilvaKupu
