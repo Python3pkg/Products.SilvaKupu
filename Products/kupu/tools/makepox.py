@@ -27,7 +27,7 @@ class POX:
         msgid = msgid.strip().replace('\n', ' ').replace('\t', ' ')
         while msgid.find('  ') > -1:
             msgid.replace('  ', ' ')
-        if self.processed.has_key(msgid):
+        if msgid in self.processed:
             filenames, node = self.processed[msgid]
             if not filename in filenames:
                 filenames.append(filename)
@@ -68,7 +68,7 @@ class XMLParser:
             exc, e, tb = sys.exc_info()
             del tb
             if warn_on_broken_xml:
-                print >>stderr, 'Error parsing %s: %s - %s' % (filename, exc, e)
+                print('Error parsing %s: %s - %s' % (filename, exc, e), file=stderr)
             return
         # walk through all the nodes and scan for i18n: stuff
         while 1:
@@ -90,9 +90,8 @@ class XMLParser:
                     for attr in attributes:
                         attritem = attrs.getNamedItem(attr)
                         if not attritem:
-                            raise AttributeError, \
-                                'No %s on %s in %s' % (
-                                    attr, node.nodeName, filename)
+                            raise AttributeError('No %s on %s in %s' % (
+                                    attr, node.nodeName, filename))
                         msgid = attritem.value;
                         pox.add(msgid, filename)
 
@@ -139,7 +138,7 @@ class JSParser:
             if chunks and more is False:
                 literal = ''.join(chunks).strip()
                 if not literal:
-                    raise ValueError, ('Unrecognized function content -- ' 
+                    raise ValueError('Unrecognized function content -- ' 
                                         'file %s, line %s' % (
                                             filename, lineno))
                 literal = literal.replace('\t', ' ').replace('\n', ' ')
@@ -169,7 +168,7 @@ class JSParser:
         quote = line[0]
         line = line[1:]
         if not quote in ['"', "'"]:
-            raise ValueError, ('beginning of function body not a recognized '
+            raise ValueError('beginning of function body not a recognized '
                                 'quote character: %s -- (file %s, line %s)' % (
                                     quote, filename, lineno))
         ret = []
@@ -190,7 +189,7 @@ class JSParser:
         if line and line[0] == '+':
             line = line[1:].strip()
             if line:
-                raise ValueError, ('string concatenation only allowed for '
+                raise ValueError('string concatenation only allowed for '
                                     'multiline strings, not for variable '
                                     'interpolation (use ${} instead) -- '
                                     '(file %s, line %s)' % (
@@ -199,10 +198,10 @@ class JSParser:
         return ''.join(ret), more
 
 if __name__ == '__main__':
-    print >>stderr, 'POX extract v0.1'
-    print >>stderr, '(c) Guido Wesdorp 2004'
+    print('POX extract v0.1', file=stderr)
+    print('(c) Guido Wesdorp 2004', file=stderr)
     files = sys.argv[1:]
-    print >>stderr, 'Going to parse files', ', '.join(files)
+    print('Going to parse files', ', '.join(files), file=stderr)
     pox = POX()
     xml = [f for f in files if not f.endswith('.js')]
     js = [f for f in files if f.endswith('.js')]
@@ -212,5 +211,5 @@ if __name__ == '__main__':
     pres = pres.replace('<catalog>',
         ('<catalog xmlns:i18n="http://xml.zope.org/namespaces/i18n" '
         'i18n:domain="kupu">'))
-    print pres
-    print >>stderr, 'Done'
+    print(pres)
+    print('Done', file=stderr)

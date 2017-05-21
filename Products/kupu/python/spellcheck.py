@@ -54,7 +54,7 @@ class SpellChecker:
                         have_replacement = False
                     assert match, 'Unknown formatted line: %s' % resline
                     word = match.group(1)
-                    if result.has_key(word):
+                    if word in result:
                         continue
                     replacements = []
                     if have_replacement:
@@ -106,7 +106,7 @@ class SpellChecker:
 def format_result(result):
     """convert the result dict to XML"""
     buf = ['<?xml version="1.0" encoding="UTF-8" ?>\n<spellcheck_result>']
-    for key, value in result.items():
+    for key, value in list(result.items()):
         buf.append('<incorrect><word>')
         buf.append(key)
         buf.append('</word><replacements>')
@@ -118,11 +118,11 @@ def format_result(result):
 if __name__ == '__main__':
     c = SpellChecker()
     while 1:
-        line = raw_input('Enter text to check: ')
+        line = input('Enter text to check: ')
         if line == 'q':
             break
         ret = c.check(line)
         if ret is None:
-            print 'okay'
+            print('okay')
         else:
-            print ret
+            print(ret)

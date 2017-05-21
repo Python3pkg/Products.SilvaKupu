@@ -11,13 +11,13 @@ STR = 1
 I18NNS = 'http://xml.zope.org/namespaces/i18n'
 
 def ustr(i):
-    if type(i) == unicode:
+    if type(i) == str:
         return i
     else:
-        return unicode(str(i), 'UTF-8')
+        return str(str(i), 'UTF-8')
 
 def get_locale():
-    if os.environ.has_key('HTTP_ACCEPT_LANGUAGE'):
+    if 'HTTP_ACCEPT_LANGUAGE' in os.environ:
         charsets = [l.strip() for l in 
                 os.environ['HTTP_ACCEPT_LANGUAGE'].split(';')[0].split(',')]
         return charsets
@@ -115,11 +115,10 @@ class Nationalizer:
                 if child.nodeType == 3:
                     buf.append(child.nodeValue)
                 else:
-                    raise TypeError, \
-                        ('illegal element %s in i18n:translate element' % 
+                    raise TypeError('illegal element %s in i18n:translate element' % 
                             child.nodeName)
-            msgid = msgstr = self.reduce_whitespace(u''.join(buf).strip())
-        if msgcat.has_key(msgid):
+            msgid = msgstr = self.reduce_whitespace(''.join(buf).strip())
+        if msgid in msgcat:
             msgstr = msgcat[msgid]
         # now replace the contents of the node with the new contents
         while node.hasChildNodes():
@@ -132,8 +131,8 @@ class Nationalizer:
         attrnames = node.getAttributeNS(I18NNS, 'attributes').split(' ')
         for attr in attrnames:
             value = node.getAttribute(attr)
-            if value and msgcat.has_key(value):
-                node.setAttribute(attr, unicode(msgcat[value], 'UTF-8'))
+            if value and value in msgcat:
+                node.setAttribute(attr, str(msgcat[value], 'UTF-8'))
         node.removeAttributeNS(I18NNS, 'attributes')
 
     def reduce_whitespace(self, string):
@@ -164,7 +163,7 @@ class Nationalizer:
         if el.nodeType == 1:
             buf.append('<%s' % el.nodeName)
             if len(el.attributes):
-                for attr, value in el.attributes.items():
+                for attr, value in list(el.attributes.items()):
                     if value is not None:
                         buf.append(' %s="%s"' % (attr, self.entitize(value)))
             if el.hasChildNodes() or el.nodeName in self.not_single:
@@ -191,4 +190,4 @@ if __name__ == '__main__':
     # test code
     os.chdir(os.path.abspath(os.path.dirname(__file__)))
     i = Nationalizer('../common/kupu.html', ['nl'])
-    print i.translate().encode('UTF-8')
+    print(i.translate().encode('UTF-8'))
